@@ -171,3 +171,9 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     product.deleted = True
     db.commit()
     return {"msg": f"🗑️ Product {product_id} soft deleted"}
+
+
+# This is important for Vercel
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
