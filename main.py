@@ -7,9 +7,18 @@ from passlib.hash import bcrypt
 from datetime import timedelta
 from auth import create_access_token
 import base64
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+# 🔓 Cấu hình CORS cho phép FE gọi API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # hoặc ["http://localhost:3000"] nếu bạn muốn giới hạn
+    allow_credentials=True,
+    allow_methods=["*"],   # Cho phép tất cả các phương thức (GET, POST, PUT, DELETE,...)
+    allow_headers=["*"],   # Cho phép tất cả header (Authorization, Content-Type,...)
+)
 # Tạo bảng khi khởi động + check DB
 @app.on_event("startup")
 def startup_event():
@@ -172,6 +181,67 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"msg": f"🗑️ Product {product_id} soft deleted"}
 
+# 🏋️‍♂️ CREATE Schedule
+@app.post("/schedules", response_model=model.ScheduleResponse)
+def create_schedule(schedule: model.ScheduleCreate, db: Session = Depends(get_db)):
+    new_schedule = entity.Schedule(
+        day_of_week=schedule.day_of_week,
+        exercise_name=schedule.exercise_name,
+        sets=schedule.sets,
+        reps=schedule.reps,
+        weight=schedule.weight
+    )
+    db.add(new_schedule)
+    db.commit()
+    db.refresh(new_schedule)
+    return new_schedule
+
+
+# 📖 READ All (chưa deleted)
+@app.get("/schedules", response_model=list[model.ScheduleResponse])
+def get_schedules(db: Session = Depends(get_db)):
+    return db.query(entity.Schedule).filter(entity.Schedule.deleted == False).all()
+
+
+# 🔍 READ By ID
+@app.get("/schedules/{schedule_id}", response_model=model.ScheduleResponse)
+def get_schedule(schedule_id: int, db: Session = Depends(get_db)):
+    schedule = db.query(entity.Schedule).filter(
+        entity.Schedule.id == schedule_id, entity.Schedule.deleted == False
+    ).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    return schedule
+
+
+# ✏️ UPDATE
+@app.put("/schedules/{schedule_id}", response_model=model.ScheduleResponse)
+def update_schedule(schedule_id: int, updated: model.ScheduleCreate, db: Session = Depends(get_db)):
+    schedule = db.query(entity.Schedule).filter(entity.Schedule.id == schedule_id).first()
+    if not schedule or schedule.deleted:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    schedule.day_of_week = updated.day_of_week
+    schedule.exercise_name = updated.exercise_name
+    schedule.sets = updated.sets
+    schedule.reps = updated.reps
+    schedule.weight = updated.weight
+
+    db.commit()
+    db.refresh(schedule)
+    return schedule
+
+
+# 🗑️ SOFT DELETE
+@app.delete("/schedules/{schedule_id}")
+def delete_schedule(schedule_id: int, db: Session = Depends(get_db)):
+    schedule = db.query(entity.Schedule).filter(entity.Schedule.id == schedule_id).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    schedule.deleted = True
+    db.commit()
+    return {"msg": f"🗑️ Schedule {schedule_id} soft deleted"}
 
 # This is important for Vercel
 if __name__ == "__main__":

@@ -39,3 +39,20 @@ class ProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ScheduleBase(BaseModel):
+    day_of_week: str
+    exercise_name: str
+    sets: int
+    reps: int
+    weight: float
+
+class ScheduleCreate(ScheduleBase):
+    pass
+
+class ScheduleResponse(ScheduleBase):
+    id: int
+    deleted: bool
+
+    class Config:
+        from_attributes = True
