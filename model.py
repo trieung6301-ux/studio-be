@@ -28,3 +28,14 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+class ProductResponse(BaseModel):
+    id: int
+    product_name: str
+    product_desc: str
+    product_type: str
+    product_price: float
+    deleted: bool
+
+    class Config:
+        from_attributes = True
