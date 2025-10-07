@@ -23,3 +23,14 @@ class Product(Base):
     product_image = Column(LargeBinary)
     product_price = Column(Float, nullable=False)
     deleted = Column(Boolean, default=False)
+
+class Schedule(Base):
+    __tablename__ = "schedule"
+
+    id = Column(Integer, primary_key=True, index=True)
+    day_of_week = Column(String(10), nullable=False)
+    exercise_name = Column(String(100), nullable=False)
+    sets = Column(Integer, nullable=False)
+    reps = Column(Integer, nullable=False)
+    weight = Column(Float, nullable=True)
+    deleted = Column(Boolean, default=False)
