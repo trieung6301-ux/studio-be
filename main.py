@@ -7,9 +7,18 @@ from passlib.hash import bcrypt
 from datetime import timedelta
 from auth import create_access_token
 import base64
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+# 🔓 Cấu hình CORS cho phép FE gọi API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # hoặc ["http://localhost:3000"] nếu bạn muốn giới hạn
+    allow_credentials=True,
+    allow_methods=["*"],   # Cho phép tất cả các phương thức (GET, POST, PUT, DELETE,...)
+    allow_headers=["*"],   # Cho phép tất cả header (Authorization, Content-Type,...)
+)
 # Tạo bảng khi khởi động + check DB
 @app.on_event("startup")
 def startup_event():
