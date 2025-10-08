@@ -51,7 +51,7 @@ def register(user: model.UserCreate, db: Session = Depends(get_db)):
         username=user.username,
         password=hashed_pw,
         email=user.email,
-        role=user.role,
+        role=user.role if user.role is not None else "user",
         avatar=user.avatar
     )
     db.add(new_user)
