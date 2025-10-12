@@ -59,6 +59,21 @@ def login(dto: model.LoginRequest, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
+@router.get("/user_info")
+def get_user_info(
+    db: Session = Depends(get_db),
+    current_user: entity.User = Depends(get_current_user)
+):
+    return {
+        "id": current_user.id,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "username": current_user.username,
+        "email": current_user.email,
+        "role": current_user.role,
+        "avatar": current_user.avatar
+    }
+
 
 # ==========================================================
 # 🟢 CREATE PRODUCT
@@ -88,6 +103,37 @@ async def create_product(
     db.refresh(new_product)
     return {"msg": "✅ Product created", "product_id": new_product.id}
 
+# ==========================================================
+# 🔵 GET PRODUCT BY ID
+# ==========================================================
+@router.get("/products/{product_id}")
+def get_product_by_id(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: entity.User = Depends(get_current_user),
+):
+    product = (
+        db.query(entity.Product)
+        .filter(entity.Product.id == product_id, entity.Product.deleted.is_(False))
+        .first()
+    )
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return {
+        "id": product.id,
+        "product_name": product.product_name,
+        "product_desc": product.product_desc,
+        "product_type": product.product_type,
+        "product_price": product.product_price,
+        "deleted": product.deleted,
+        "product_image": (
+            base64.b64encode(product.product_image).decode("utf-8")
+            if product.product_image
+            else None
+        ),
+    }
 
 # ==========================================================
 # 🔵 GET ALL PRODUCTS
@@ -211,7 +257,6 @@ def create_schedule(
 def get_schedules(
     db: Session = Depends(get_db), current_user: entity.User = Depends(get_current_user)
 ):
-    # ✅ chỉ lấy schedule của user hiện tại
     schedules = (
         db.query(entity.Schedule)
         .filter(
