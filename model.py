@@ -7,8 +7,8 @@ class UserCreate(BaseModel):
     username: str
     password: str
     email: str
-    role: Optional[str] = "user"
-    avatar: Optional[str] = None
+    role: str
+    avatar: str
 
 class UserResponse(BaseModel):
     id: int
@@ -46,7 +46,7 @@ class ScheduleBase(BaseModel):
     exercise_name: str
     sets: int
     reps: int
-    weight: float
+    weight: float | None = None
 
 class ScheduleCreate(ScheduleBase):
     pass
@@ -54,6 +54,7 @@ class ScheduleCreate(ScheduleBase):
 class ScheduleResponse(ScheduleBase):
     id: int
     deleted: bool
+    user_id: int  # ✅ để biết schedule thuộc user nào
 
     class Config:
         from_attributes = True

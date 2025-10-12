@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, LargeBinary, Float, Boolean
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, LargeBinary
+from sqlalchemy.orm import relationship
 from database import Base
 
 class User(Base):
@@ -11,7 +12,9 @@ class User(Base):
     password = Column(String(255), nullable=False)
     email = Column(String(120), unique=True, index=True, nullable=False)
     role = Column(String(20), default="user")
-    avatar = Column(String(255), nullable=True)
+    avatar = Column(String(255), default="avatar")
+
+    schedules = relationship("Schedule", back_populates="user")
 
 class Product(Base):
     __tablename__ = "product"
@@ -33,4 +36,7 @@ class Schedule(Base):
     sets = Column(Integer, nullable=False)
     reps = Column(Integer, nullable=False)
     weight = Column(Float, nullable=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     deleted = Column(Boolean, default=False)
+
+    user = relationship("User", back_populates="schedules")
