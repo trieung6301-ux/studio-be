@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import engine, Base
+
 from api import router
+from database import Base, engine
 
 app = FastAPI(
     title="🏋️ Fitness API",
     description="API quản lý sản phẩm và lịch tập có xác thực người dùng (OAuth2 Password Flow)",
     version="1.0.0",
-    swagger_ui_parameters={"persistAuthorization": True}
+    swagger_ui_parameters={"persistAuthorization": True},
 )
 
 app.include_router(router)
@@ -24,6 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # ==========================================================
 # ⚙️ Kiểm tra DB khi khởi động
 # ==========================================================
@@ -35,9 +37,11 @@ def startup_event():
     except Exception as e:
         print("❌ Database connection failed:", e)
 
+
 # ==========================================================
 # 🚀 Run local
 # ==========================================================
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

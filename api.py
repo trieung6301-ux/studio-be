@@ -1,12 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form, Query
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from database import get_db
-from passlib.hash import bcrypt
-from auth import create_access_token, get_current_user
-from typing import Optional, List
-import entity, model, base64
+import base64
+from typing import List, Optional
 
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi.security import OAuth2PasswordRequestForm
+from passlib.hash import bcrypt
+from sqlalchemy.orm import Session
+
+import entity
+import model
+from auth import create_access_token, get_current_user
+from database import get_db
 
 router = APIRouter()
 
@@ -16,12 +19,17 @@ router = APIRouter()
 # ==========================================================
 @router.post("/register", response_model=model.UserResponse)
 def register(user: model.UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(entity.User).filter(
-        (entity.User.username == user.username) |
-        (entity.User.email == user.email)
-    ).first()
+    db_user = (
+        db.query(entity.User)
+        .filter(
+            (entity.User.username == user.username) | (entity.User.email == user.email)
+        )
+        .first()
+    )
     if db_user:
-        raise HTTPException(status_code=400, detail="Username or Email already registered")
+        raise HTTPException(
+            status_code=400, detail="Username or Email already registered"
+        )
 
     hashed_pw = bcrypt.hash(user.password)
     new_user = entity.User(
@@ -31,12 +39,13 @@ def register(user: model.UserCreate, db: Session = Depends(get_db)):
         password=hashed_pw,
         email=user.email,
         role=user.role,
-        avatar=user.avatar 
+        avatar=user.avatar,
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
+
 
 # ==========================================================
 # 🔐 LOGIN (chuẩn OAuth2 Password Flow)
@@ -52,7 +61,6 @@ def login(dto: model.LoginRequest, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-
 # ==========================================================
 # 🟢 CREATE PRODUCT
 # ==========================================================
@@ -64,7 +72,7 @@ async def create_product(
     product_price: float = Form(...),
     product_image: UploadFile = File(None),
     db: Session = Depends(get_db),
-    current_user: entity.User = Depends(get_current_user)
+    current_user: entity.User = Depends(get_current_user),
 ):
     image_bytes = await product_image.read() if product_image else None
 
@@ -73,13 +81,14 @@ async def create_product(
         product_desc=product_desc,
         product_type=product_type,
         product_price=product_price,
-        product_image=image_bytes
+        product_image=image_bytes,
     )
 
     db.add(new_product)
     db.commit()
     db.refresh(new_product)
     return {"msg": "✅ Product created", "product_id": new_product.id}
+
 
 # ==========================================================
 # 🔵 GET ALL PRODUCTS
@@ -90,9 +99,9 @@ def get_products(
     min_price: Optional[float] = Query(None),
     max_price: Optional[float] = Query(None),
     product_type: Optional[str] = Query(None),
-    current_user: entity.User = Depends(get_current_user)
+    current_user: entity.User = Depends(get_current_user),
 ):
-    query = db.query(entity.Product).filter(entity.Product.deleted == False)
+    query = db.query(entity.Product).filter(entity.Product.deleted.is_(False))
 
     if min_price is not None:
         query = query.filter(entity.Product.product_price >= min_price)
@@ -104,16 +113,23 @@ def get_products(
     products = query.all()
     result = []
     for p in products:
-        result.append({
-            "id": p.id,
-            "product_name": p.product_name,
-            "product_desc": p.product_desc,
-            "product_type": p.product_type,
-            "product_price": p.product_price,
-            "deleted": p.deleted,
-            "product_image": base64.b64encode(p.product_image).decode('utf-8') if p.product_image else None
-        })
+        result.append(
+            {
+                "id": p.id,
+                "product_name": p.product_name,
+                "product_desc": p.product_desc,
+                "product_type": p.product_type,
+                "product_price": p.product_price,
+                "deleted": p.deleted,
+                "product_image": (
+                    base64.b64encode(p.product_image).decode("utf-8")
+                    if p.product_image
+                    else None
+                ),
+            }
+        )
     return result
+
 
 # ==========================================================
 # 🟠 UPDATE PRODUCT
@@ -127,7 +143,7 @@ async def update_product(
     product_price: float = Form(None),
     product_image: UploadFile = File(None),
     db: Session = Depends(get_db),
-    current_user: entity.User = Depends(get_current_user)
+    current_user: entity.User = Depends(get_current_user),
 ):
     product = db.query(entity.Product).filter(entity.Product.id == product_id).first()
     if not product or product.deleted:
@@ -148,6 +164,7 @@ async def update_product(
     db.refresh(product)
     return {"msg": "✅ Product updated", "product_id": product.id}
 
+
 # ==========================================================
 # 🔴 SOFT DELETE PRODUCT
 # ==========================================================
@@ -155,7 +172,7 @@ async def update_product(
 def delete_product(
     product_id: int,
     db: Session = Depends(get_db),
-    current_user: entity.User = Depends(get_current_user)
+    current_user: entity.User = Depends(get_current_user),
 ):
     product = db.query(entity.Product).filter(entity.Product.id == product_id).first()
     if not product:
@@ -165,15 +182,17 @@ def delete_product(
     db.commit()
     return {"msg": f"🗑️ Product {product_id} soft deleted"}
 
+
 # ==========================================================
 # 🏋️ CRUD CHO SCHEDULE (gắn với user)
 # ==========================================================
+
 
 @router.post("/schedules", response_model=model.ScheduleResponse)
 def create_schedule(
     schedule: model.ScheduleCreate,
     db: Session = Depends(get_db),
-    current_user: entity.User = Depends(get_current_user)
+    current_user: entity.User = Depends(get_current_user),
 ):
     new_schedule = entity.Schedule(
         day_of_week=schedule.day_of_week,
@@ -181,7 +200,7 @@ def create_schedule(
         sets=schedule.sets,
         reps=schedule.reps,
         weight=schedule.weight,
-        user_id=current_user.id   # ✅ lấy user từ token
+        user_id=current_user.id,  # ✅ lấy user từ token
     )
     db.add(new_schedule)
     db.commit()
@@ -191,14 +210,17 @@ def create_schedule(
 
 @router.get("/schedules", response_model=List[model.ScheduleResponse])
 def get_schedules(
-    db: Session = Depends(get_db),
-    current_user: entity.User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: entity.User = Depends(get_current_user)
 ):
     # ✅ chỉ lấy schedule của user hiện tại
-    schedules = db.query(entity.Schedule).filter(
-        entity.Schedule.deleted == False,
-        entity.Schedule.user_id == current_user.id
-    ).all()
+    schedules = (
+        db.query(entity.Schedule)
+        .filter(
+            entity.Schedule.deleted.is_(False),
+            entity.Schedule.user_id == current_user.id,
+        )
+        .all()
+    )
     return schedules
 
 
@@ -207,16 +229,23 @@ def update_schedule(
     schedule_id: int,
     updated: model.ScheduleCreate,
     db: Session = Depends(get_db),
-    current_user: entity.User = Depends(get_current_user)
+    current_user: entity.User = Depends(get_current_user),
 ):
-    schedule = db.query(entity.Schedule).filter(
-        entity.Schedule.id == schedule_id,
-        entity.Schedule.user_id == current_user.id,  # ✅ chỉ được sửa schedule của mình
-        entity.Schedule.deleted == False
-    ).first()
+    schedule = (
+        db.query(entity.Schedule)
+        .filter(
+            entity.Schedule.id == schedule_id,
+            entity.Schedule.user_id
+            == current_user.id,  # ✅ chỉ được sửa schedule của mình
+            entity.Schedule.deleted.is_(False),
+        )
+        .first()
+    )
 
     if not schedule:
-        raise HTTPException(status_code=404, detail="Schedule not found or access denied")
+        raise HTTPException(
+            status_code=404, detail="Schedule not found or access denied"
+        )
 
     schedule.day_of_week = updated.day_of_week
     schedule.exercise_name = updated.exercise_name
@@ -233,21 +262,25 @@ def update_schedule(
 def delete_schedule(
     schedule_id: int,
     db: Session = Depends(get_db),
-    current_user: entity.User = Depends(get_current_user)
+    current_user: entity.User = Depends(get_current_user),
 ):
-    schedule = db.query(entity.Schedule).filter(
-        entity.Schedule.id == schedule_id,
-        entity.Schedule.user_id == current_user.id  # ✅ chỉ được xóa của mình
-    ).first()
+    schedule = (
+        db.query(entity.Schedule)
+        .filter(
+            entity.Schedule.id == schedule_id,
+            entity.Schedule.user_id == current_user.id,  # ✅ chỉ được xóa của mình
+        )
+        .first()
+    )
 
     if not schedule:
-        raise HTTPException(status_code=404, detail="Schedule not found or access denied")
+        raise HTTPException(
+            status_code=404, detail="Schedule not found or access denied"
+        )
 
     schedule.deleted = True
     db.commit()
     return {"msg": f"🗑️ Schedule {schedule_id} soft deleted"}
-
-
 
 
 # ==========================================================
@@ -260,14 +293,14 @@ async def create_order(
     phone_number: str = Form(...),
     email: str = Form(...),
     db: Session = Depends(get_db),
-    current_user: entity.User = Depends(get_current_user)
+    current_user: entity.User = Depends(get_current_user),
 ):
     new_order = entity.Order(
         name=name,
         address=address,
         phone_number=phone_number,
         email=email,
-        user_id=current_user.id  # gắn user_id từ token
+        user_id=current_user.id,  # gắn user_id từ token
     )
 
     db.add(new_order)
@@ -283,12 +316,13 @@ async def create_order(
 def get_order_by_id(
     order_id: int,
     db: Session = Depends(get_db),
-    current_user: entity.User = Depends(get_current_user)
+    current_user: entity.User = Depends(get_current_user),
 ):
-    order = db.query(entity.Order).filter(
-        entity.Order.id == order_id,
-        entity.Order.user_id == current_user.id
-    ).first()
+    order = (
+        db.query(entity.Order)
+        .filter(entity.Order.id == order_id, entity.Order.user_id == current_user.id)
+        .first()
+    )
 
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -299,7 +333,7 @@ def get_order_by_id(
         "address": order.address,
         "phone_number": order.phone_number,
         "email": order.email,
-        "user_id": order.user_id
+        "user_id": order.user_id,
     }
 
 
@@ -308,19 +342,22 @@ def get_order_by_id(
 # ==========================================================
 @router.get("/orders")
 def get_all_orders(
-    db: Session = Depends(get_db),
-    current_user: entity.User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: entity.User = Depends(get_current_user)
 ):
-    orders = db.query(entity.Order).filter(entity.Order.user_id == current_user.id).all()
+    orders = (
+        db.query(entity.Order).filter(entity.Order.user_id == current_user.id).all()
+    )
 
     result = []
     for o in orders:
-        result.append({
-            "id": o.id,
-            "name": o.name,
-            "address": o.address,
-            "phone_number": o.phone_number,
-            "email": o.email,
-            "user_id": o.user_id
-        })
+        result.append(
+            {
+                "id": o.id,
+                "name": o.name,
+                "address": o.address,
+                "phone_number": o.phone_number,
+                "email": o.email,
+                "user_id": o.user_id,
+            }
+        )
     return result

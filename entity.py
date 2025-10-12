@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, LargeBinary
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, LargeBinary, String
 from sqlalchemy.orm import relationship
+
 from database import Base
+
 
 class User(Base):
     __tablename__ = "user"
@@ -17,6 +19,7 @@ class User(Base):
     schedules = relationship("Schedule", back_populates="user")
     orders = relationship("Order", back_populates="user")
 
+
 class Order(Base):
     __tablename__ = "order"
 
@@ -29,6 +32,7 @@ class Order(Base):
 
     user = relationship("User", back_populates="orders")
 
+
 class Product(Base):
     __tablename__ = "product"
 
@@ -39,6 +43,7 @@ class Product(Base):
     product_image = Column(LargeBinary)
     product_price = Column(Float, nullable=False)
     deleted = Column(Boolean, default=False)
+
 
 class Schedule(Base):
     __tablename__ = "schedule"
