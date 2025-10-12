@@ -15,6 +15,19 @@ class User(Base):
     avatar = Column(String(255), default="avatar")
 
     schedules = relationship("Schedule", back_populates="user")
+    orders = relationship("Order", back_populates="user")
+
+class Order(Base):
+    __tablename__ = "order"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    address = Column(String(255), nullable=False)
+    phone_number = Column(String(20), nullable=False)
+    email = Column(String(120), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+
+    user = relationship("User", back_populates="orders")
 
 class Product(Base):
     __tablename__ = "product"

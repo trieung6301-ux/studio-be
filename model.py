@@ -30,6 +30,11 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+
+
+
+
+
 class ProductResponse(BaseModel):
     id: int
     product_name: str
@@ -40,6 +45,15 @@ class ProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+
+
+
+
+
+
+
 
 class ScheduleBase(BaseModel):
     day_of_week: str
@@ -54,6 +68,24 @@ class ScheduleCreate(ScheduleBase):
 class ScheduleResponse(ScheduleBase):
     id: int
     deleted: bool
+    user_id: int
+
+    class Config:
+        from_attributes = True
+
+
+
+class OrderBase(BaseModel):
+    name: str
+    address: str
+    phone_number: str
+    email: str
+
+class OrderCreate(OrderBase):
+    pass
+
+class OrderResponse(OrderBase):
+    id: int
     user_id: int
 
     class Config:
