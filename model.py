@@ -7,8 +7,8 @@ class UserCreate(BaseModel):
     username: str
     password: str
     email: str
-    role: str
-    avatar: str
+    role: Optional[str] = None
+    avatar: Optional[str] = None
 
 class UserResponse(BaseModel):
     id: int
@@ -54,7 +54,7 @@ class ScheduleCreate(ScheduleBase):
 class ScheduleResponse(ScheduleBase):
     id: int
     deleted: bool
-    user_id: int  # ✅ để biết schedule thuộc user nào
+    user_id: int
 
     class Config:
         from_attributes = True
