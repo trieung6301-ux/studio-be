@@ -2,7 +2,6 @@ import base64
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
-from fastapi.security import OAuth2PasswordRequestForm
 from passlib.hash import bcrypt
 from sqlalchemy.orm import Session
 
@@ -200,7 +199,7 @@ def create_schedule(
         sets=schedule.sets,
         reps=schedule.reps,
         weight=schedule.weight,
-        user_id=current_user.id,  # ✅ lấy user từ token
+        user_id=current_user.id,
     )
     db.add(new_schedule)
     db.commit()
@@ -235,8 +234,7 @@ def update_schedule(
         db.query(entity.Schedule)
         .filter(
             entity.Schedule.id == schedule_id,
-            entity.Schedule.user_id
-            == current_user.id,  # ✅ chỉ được sửa schedule của mình
+            entity.Schedule.user_id == current_user.id,
             entity.Schedule.deleted.is_(False),
         )
         .first()
@@ -268,7 +266,7 @@ def delete_schedule(
         db.query(entity.Schedule)
         .filter(
             entity.Schedule.id == schedule_id,
-            entity.Schedule.user_id == current_user.id,  # ✅ chỉ được xóa của mình
+            entity.Schedule.user_id == current_user.id,
         )
         .first()
     )
@@ -300,7 +298,7 @@ async def create_order(
         address=address,
         phone_number=phone_number,
         email=email,
-        user_id=current_user.id,  # gắn user_id từ token
+        user_id=current_user.id,
     )
 
     db.add(new_order)
